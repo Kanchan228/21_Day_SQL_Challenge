@@ -58,21 +58,8 @@ Select *
 from services_weekly
 limit 10;
 
----------------------------------
-# Day-2
--- 1. Find patient who are older than 60 years
-select patient_id, name, age
- from patients
- where age >60;
- 
- -- 2. Retrieve all staff members who work in the 'Emergency' service.
- select * from staff
- where service = 'Emergency';
- 
- -- 3. List all weeks where more than 100 patients requested admission in any service.
- select week, 
- sum(patients_admitted) as patient_num
- from services_weekly
- GROUP BY week
- having sum(patients_admitted)>100 ;
+# Challenge
+# List all unique hospital services available in the hospital.
+Select DISTINCT(service) 
+from services_weekly;
  
