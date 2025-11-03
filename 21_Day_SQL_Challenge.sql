@@ -63,3 +63,30 @@ limit 10;
 Select DISTINCT(service) 
 from services_weekly;
  
+# Day-2
+-- 1. Find patient who are older than 60 years
+SELECT patient_id, 
+       name, age
+ FROM patients
+ WHERE age >60;
+ 
+ -- 2. Retrieve all staff members who work in the 'Emergency' service.
+ SELECT staff_name
+ FROM staff
+ WHERE service = 'Emergency';
+ 
+ -- 3. List all weeks where more than 100 patients requested admission in any service.
+ SELECT week, 
+ sum(patients_admitted) as patient_num
+ FROM services_weekly
+ GROUP BY week
+ HAVING sum(patients_admitted)>100 ;
+ 
+ /* Challenge - Find all patients admitted to 'Surgery' service with a satisfaction score below 70,
+ showing their patient_id, name, age, and satisfaction score.*/
+ 
+ SELECT patient_id, 
+        name, age,
+        satisfaction
+ FROM patients
+ WHERE service ="Surgery" AND satisfaction <70;
