@@ -152,3 +152,27 @@ SELECT
 FROM patients
 ORDER BY satisfaction DESC
 LIMIT 5 OFFSET 2;
+
+# Day 5
+-- 1. Count the total number of patients in the hospital.
+SELECT 
+     count(DISTINCT patient_id) as no_of_patients
+ FROM patients;
+
+-- 2. Calculate the average satisfaction score of all patients
+SELECT round(avg(satisfaction),2) as avg_satisfaction_score 
+from patients;
+
+-- 3. Find the minimum and maximum age of patients.
+SELECT MIN(age) as min_age,
+MAX(age) as max_age
+FROM patients;
+
+/* Question: Calculate the total number of patients admitted, total patients refused, and the average patient 
+satisfaction across all services and weeks. Round the average satisfaction to 2 decimal places. */
+
+SELECT 
+SUM(patients_admitted) as total_patient,
+SUM(patients_refused) as total_patient_refused,
+ROUND (AVG(patient_satisfaction),2) AS avg_patient_satisfaction
+FROM services_weekly;
