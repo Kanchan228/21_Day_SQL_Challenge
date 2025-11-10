@@ -243,4 +243,40 @@ GROUP BY service
 HAVING SUM(patients_refused)>100 AND
 AVG(patient_satisfaction)<80 ;
 
+# Day 9
+-- 1. Extract the year from all patient arrival dates.
+SELECT
+		patient_id,
+		arrival_date,
+		YEAR(arrival_date) AS arrival_year
+ FROM patients;
 
+ -- or
+SELECT 
+    patient_id,
+    arrival_date,
+    EXTRACT(YEAR FROM arrival_date) AS arrival_year
+FROM patients;
+ 
+-- 2. Calculate the length of stay for each patient (departure_date - arrival_date).
+SELECT 
+	patient_id, name,
+	DATEDIFF(departure_date, arrival_date) AS stay_length
+FROM patients;
+
+-- 3. Find all patients who arrived in a specific month.
+SELECT	
+	COUNT(patient_id) no_of_patients,
+	MONTH(arrival_date) AS month_name
+FROM patients
+GROUP BY month(arrival_date)
+ORDER BY month_name;
+
+/* Question: Calculate the average length of stay (in days) for each service, showing only services where the 
+average stay is more than 7 days. Also show the count of patients and order by average stay descending. */
+
+SELECT 
+	service,
+	ROUND(AVG(DATEDIFF(departure_date, arrival_date)),2) AS avg_stay
+FROM patients
+GROUP BY service;
