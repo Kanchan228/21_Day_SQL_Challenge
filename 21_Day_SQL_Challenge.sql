@@ -277,6 +277,8 @@ average stay is more than 7 days. Also show the count of patients and order by a
 
 SELECT 
 	service,
+    COUNT(patient_id) as no_of_patient,
 	ROUND(AVG(DATEDIFF(departure_date, arrival_date)),2) AS avg_stay
 FROM patients
-GROUP BY service;
+GROUP BY service
+HAVING AVG(DATEDIFF(departure_date, arrival_date))>7;
