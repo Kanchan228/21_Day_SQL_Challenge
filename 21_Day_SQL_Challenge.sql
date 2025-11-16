@@ -396,3 +396,51 @@ morale. Order by average patient satisfaction descending. */
      ROUND(AVG(staff_morale),2) as avg_staff_morale
  FROM services_weekly
  GROUP BY event_status;
+
+
+ # Day 13
+ -- 1. Join patients and staff based on their common service field (show patient and staff who work in same service).
+ SELECT 
+       p.name AS Patient_name,
+       s.staff_name, 
+       p.service
+ FROM patients p
+ INNER JOIN staff s
+ ON p.service =s.service;
+ 
+ -- 2. Join services_weekly with staff to show weekly service data with staff information.
+ SELECT *
+FROM services_weekly sw
+INNER JOIN staff s
+ON s.service=sw.service;
+ 
+ -- 3. Create a report showing patient information along with staff assigned to their service.
+ SELECT 
+       p.*,
+	   s.staff_name
+ FROM patients p
+ INNER 	JOIN staff s
+ ON p.service = s.service;
+ 
+ /* Question: Create a comprehensive report showing patient_id, patient name, age, service, and the total number of
+ staff members available in their service. Only include patients from services that have more than 5 staff members.
+ Order by number of staff descending, then by patient name. */
+ SELECT
+ p.name AS Patient_name,
+ p.age,
+ p.service,
+ COUNT(s.staff_id) AS no_of_staff
+ FROM patients p
+ INNER JOIN staff s
+ ON p.service = s.service
+ GROUP BY p.service,p.name,p.age
+ HAVING COUNT(s.staff_id)>5
+ ORDER BY no_of_staff DESC,
+          patient_name;
+ 
+ 
+ 
+ 
+ 
+ 
+ 
