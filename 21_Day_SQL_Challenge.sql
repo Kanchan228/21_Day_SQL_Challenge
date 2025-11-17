@@ -437,6 +437,58 @@ ON s.service=sw.service;
  HAVING COUNT(s.staff_id)>5
  ORDER BY no_of_staff DESC,
           patient_name;
+
+# Day 14
+ -- 1. Show all staff members and their schedule information (including those with no schedule entries).
+ SELECT s.staff_id,
+		s.staff_name,
+        ss.week,
+        ss.role,
+        ss.present
+        from staff s
+	LEFT JOIN staff_schedule ss
+ ON s.staff_id =ss.staff_id;
+ select * from staff;
+ 
+ -- 2. List all services from services_weekly and their corresponding staff(show services even if no staff assigned).
+ SELECT sw.service,
+		s.staff_name
+FROM services_weekly sw
+LEFT JOIN staff s 
+ON s.service = sw.service;
+
+-- 3. Display all patients and their service's weekly statistics (if available).
+SELECT p.name,
+       s.week,
+	   s.service,
+       s.available_beds,
+       s.patient_satisfaction,
+       s.patients_admitted,
+       s.patients_refused,
+       s.patients_request
+ FROM patients p 
+ LEFT JOIN services_weekly s
+ ON	p.service = s.service;
+ 
+ /* Challenge Question: Create a staff utilisation report showing all staff members (staff_id, staff_name, role, 
+ service) and the count of weeks they were present (from staff_schedule). Include staff members even if they have no
+ schedule records. Order by weeks present descending. */
+SELECT 
+    s.staff_id,
+    s.staff_name,
+    s.role,
+    s.service,
+    COUNT(ss.week) AS weeks_present
+FROM staff s
+LEFT JOIN staff_schedule ss
+    ON s.staff_id = ss.staff_id
+    AND ss.present = 1
+GROUP BY s.staff_id,s.staff_name,
+         s.role, s.service
+ORDER BY weeks_present DESC;
+
+
+
  
  
  
