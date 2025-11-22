@@ -44,7 +44,7 @@ CREATE TABLE staff_schedule (
     present TINYINT(1),
     FOREIGN KEY (staff_id) REFERENCES staff(staff_id)
 );
-
+------------------------------------------------------------------------------------------------------------------------------------------
 # Day-1
 # 1. Retrive all columns from patients table
 select * from patients;
@@ -62,7 +62,7 @@ limit 10;
 # List all unique hospital services available in the hospital.
 Select DISTINCT(service) 
 from services_weekly;
- 
+------------------------------------------------------------------------------------------------------------------------------------------ 
 # Day-2
 -- 1. Find patient who are older than 60 years
 SELECT patient_id, 
@@ -90,7 +90,7 @@ SELECT patient_id,
         satisfaction
  FROM patients
  WHERE service ="Surgery" AND satisfaction <70;
-
+------------------------------------------------------------------------------------------------------------------------------------------
  # Day -3
  -- 1. List all patients sorted by age in descending order.
  SELECT patient_id,
@@ -119,7 +119,7 @@ SELECT patient_id,
  FROM services_weekly
  ORDER BY patients_refused DESC
  LIMIT 5;
- 
+------------------------------------------------------------------------------------------------------------------------------------------ 
 # Day 4
  -- 1. Display the first 5 patients from the patients table.
  
@@ -152,7 +152,7 @@ SELECT
 FROM patients
 ORDER BY satisfaction DESC
 LIMIT 5 OFFSET 2;
-
+------------------------------------------------------------------------------------------------------------------------------------------
 # Day 5
 -- 1. Count the total number of patients in the hospital.
 SELECT 
@@ -176,7 +176,7 @@ SUM(patients_admitted) as total_patient,
 SUM(patients_refused) as total_patient_refused,
 ROUND (AVG(patient_satisfaction),2) AS avg_patient_satisfaction
 FROM services_weekly;
-
+------------------------------------------------------------------------------------------------------------------------------------------
 # Day 6
 -- 1. Count the number of patients by each service.
 SELECT service,
@@ -206,7 +206,7 @@ ROUND(SUM(patients_admitted)*100/ SUM(patients_request),2) AS admission_rate
 FROM services_weekly
 GROUP BY service
 ORDER BY admission_rate;
-
+------------------------------------------------------------------------------------------------------------------------------------------
 # Day 7
 -- 1. Find services that have admitted more than 500 patients in total.
 SELECT service,
@@ -242,7 +242,7 @@ FROM services_weekly
 GROUP BY service
 HAVING SUM(patients_refused)>100 AND
 AVG(patient_satisfaction)<80 ;
-
+------------------------------------------------------------------------------------------------------------------------------------------
 # Day 9
 -- 1. Extract the year from all patient arrival dates.
 SELECT
@@ -282,7 +282,7 @@ SELECT
 FROM patients
 GROUP BY service
 HAVING AVG(DATEDIFF(departure_date, arrival_date))>7;
-
+------------------------------------------------------------------------------------------------------------------------------------------
 # Day 10
 -- 1. Categorise patients as 'High', 'Medium', or 'Low' satisfaction based on their scores.
 SELECT 
@@ -329,7 +329,7 @@ END as Performance_category
 FROM services_weekly
 GROUP BY service
 ORDER BY AVG(patient_satisfaction) DESC;
-
+------------------------------------------------------------------------------------------------------------------------------------------
 # Day 11
 -- 1. List all unique services in the patients table.
 SELECT DISTINCT service
@@ -356,7 +356,7 @@ WHERE event is not null and
 	  event <> 'none'
 GROUP BY service, event
 ORDER BY occurrence DESC;
-
+------------------------------------------------------------------------------------------------------------------------------------------
 # Day 12
 -- 1. Find all weeks in services_weekly where no special event occurred.
 SELECT 
@@ -396,7 +396,7 @@ morale. Order by average patient satisfaction descending. */
      ROUND(AVG(staff_morale),2) as avg_staff_morale
  FROM services_weekly
  GROUP BY event_status;
-
+------------------------------------------------------------------------------------------------------------------------------------------
 
  # Day 13
  -- 1. Join patients and staff based on their common service field (show patient and staff who work in same service).
@@ -437,7 +437,7 @@ ON s.service=sw.service;
  HAVING COUNT(s.staff_id)>5
  ORDER BY no_of_staff DESC,
           patient_name;
-
+------------------------------------------------------------------------------------------------------------------------------------------
 # Day 14
  -- 1. Show all staff members and their schedule information (including those with no schedule entries).
  SELECT s.staff_id,
@@ -486,7 +486,7 @@ LEFT JOIN staff_schedule ss
 GROUP BY s.staff_id,s.staff_name,
          s.role, s.service
 ORDER BY weeks_present DESC;
-
+-----------------------------------------------------------------------------------------------------------------------------------------
 # Day 15
 -- 1. Join patients, staff, and staff_schedule to show patient service and staff availability.
 SELECT p.patient_id,
@@ -539,7 +539,7 @@ JOIN staff_schedule ss ON sw.service =ss.service
 WHERE sw.week = 20
 GROUP BY sw.service
 ORDER BY total_patients_admitted DESC;
-
+---------------------------------------------------------------------------------------------------------------------------------------
 # Day 16
  -- 1. Find patients who are in services with above-average staff count.
  SELECT * FROM patients
@@ -584,7 +584,78 @@ WHERE p.service IN (
            AND AVG(sw.patient_satisfaction) < (
             SELECT AVG(patient_satisfaction)
             FROM services_weekly ));
+---------------------------------------------------------------------------------------------------------------------------------------
+# Day 17
+-- 1. Show each patient with their service's average satisfaction as an additional column.
+SELECT patient_id,
+name,service, satisfaction,
+(SELECT ROUND(AVG(satisfaction),2)
+FROM patients p1 WHERE p1.service = p.service ) AS Avg_satisfaction
+FROM patients p;
+-- OR -- using window function
+SELECT 
+    patient_id,
+    name,
+    service,
+    satisfaction,
+    ROUND(AVG(satisfaction) OVER (PARTITION BY service), 2) 
+        AS avg_service_satisfaction
+FROM patients;
 
+-- 2. Create a derived table of service statistics and query from it.
+SELECT * 
+FROM (
+SELECT 
+      service,
+     SUM(patients_request) AS Total_patients_request,
+     SUM(patients_admitted) AS Total_patients_admitted,
+     SUM(patients_refused) AS Total_patients_refused,
+     ROUND(AVG(patient_satisfaction),2) AS Avg_satisfaction
+FROM services_weekly
+GROUP BY service) AS service_stats
+WHERE Total_patients_request>1000;
+
+-- 3. Display staff with their service's total patient count as a calculated field.
+SELECT * from staff;
+Select * from patients;
+	SELECT staff_id, staff_name,
+	service, role,
+	(SELECT COUNT(DISTINCT patient_id)
+	FROM patients p
+	WHERE p.service = s.service ) AS total_patients
+	FROM staff s;
+    
+/* Question: Create a report showing each service with: service name, total patients admitted, the difference between
+ their total admissions and the average admissions across all services, and a rank indicator ('Above Average',
+ 'Average', 'Below Average'). Order by total patients admitted descending. */
+SELECT s.service,
+s.Total_admitted,
+a.Avg_Patient_admitted,
+s.Total_admitted - a.Avg_Patient_admitted AS differnce,
+CASE WHEN Total_admitted> Avg_Patient_admitted THEN 'Above Average'
+     WHEN Total_admitted = Avg_Patient_admitted THEN 'Average'
+     ELSE 'Below Average'
+END AS Rank_indicator
+FROM(
+SELECT service,
+       SUM(patients_admitted) AS Total_admitted
+FROM services_weekly
+GROUP BY service) s
+CROSS JOIN
+(SELECT	 ROUND(AVG(total_admitted),2) AS Avg_Patient_admitted  FROM
+     (SELECT SUM(patients_admitted) AS total_admitted FROM services_weekly GROUP BY service)
+AS x ) a
+ORDER BY s.Total_admitted DESC ;
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+ 
+ 
+ 
+ 
+ 
 
 
 
