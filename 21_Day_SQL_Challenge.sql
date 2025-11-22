@@ -647,7 +647,51 @@ CROSS JOIN
 AS x ) a
 ORDER BY s.Total_admitted DESC ;
 -------------------------------------------------------------------------------------------------------------------------------------------
+# Day 18
+-- 1. Combine patient names and staff names into a single list.
+SELECT name AS full_name, 
+       'patient' AS type
+FROM patients
+UNION ALL
+SELECT staff_name, 
+       'staff' AS type
+FROM staff;
 
+-- 2. Create a union of high satisfaction patients (>90) and low satisfaction patients (<50).
+SELECT satisfaction,
+       'High Satisfaction' AS Level
+FROM patients
+WHERE satisfaction>90
+UNION ALL
+SELECT satisfaction,
+       'Low Satisfaction' AS Level
+FROM patients
+WHERE satisfaction<50;
+
+-- 3. List all unique names from both patients and staff tables.
+SELECT name AS full_name
+FROM patients
+UNION 
+SELECT staff_name
+FROM staff;
+
+/* Question: Create a comprehensive personnel and patient list showing: identifier (patient_id or staff_id), 
+full name, type ('Patient' or 'Staff'), and associated service. Include only those in 'surgery' or 'emergency'
+ services. Order by type, then service, then name. */
+
+select * from(
+SELECT patient_id as Identifier,
+	   name AS full_name, 
+       'Patient' AS Type,
+        service
+FROM patients
+UNION ALL
+SELECT staff_id as Identifier,
+       staff_name AS full_name, 
+       'Staff' AS Type,
+        service
+FROM staff) a
+ORDER BY Type, service, full_name;
 
 
 
