@@ -680,26 +680,59 @@ full name, type ('Patient' or 'Staff'), and associated service. Include only tho
  services. Order by type, then service, then name. */
 
 select * from(
-SELECT patient_id as Identifier,
+SELECT patient_id AS Identifier,
 	   name AS full_name, 
        'Patient' AS Type,
         service
 FROM patients
 UNION ALL
-SELECT staff_id as Identifier,
+SELECT staff_id AS Identifier,
        staff_name AS full_name, 
        'Staff' AS Type,
         service
 FROM staff) a
 ORDER BY Type, service, full_name;
 
+-------------------------------------------------------------------------------------------------------------------
+# Day 19
+-- 1. Rank patients by satisfaction score within each service.
+SELECT 
+     patient_id,
+     name,
+     service,
+     satisfaction,
+DENSE_RANK() OVER(PARTITION BY service ORDER BY satisfaction DESC) AS rn
+FROM patients
+ORDER BY service,rn;
 
+-- 2. Assign row numbers to staff ordered by their name.
+SELECT 
+     ROW_NUMBER() OVER(ORDER BY staff_name) AS Rn,
+     staff_name
+FROM staff;
 
- 
- 
- 
- 
- 
+-- 3. Rank services by total patients admitted.
+SELECT
+      service,
+      SUM(patients_admitted) AS Total_patient_admitted,
+	  RANK() OVER(ORDER BY SUM(patients_admitted) DESC) AS rnk
+FROM services_weekly
+GROUP BY service;
+
+/* Question: For each service, rank the weeks by patient satisfaction score (highest first). Show service, week,
+ patient_satisfaction, patients_admitted, and the rank. Include only the top 3 weeks per service.*/
+
+SELECT * FROM(
+  SELECT 
+       service,
+       week,
+       SUM(patient_satisfaction) AS patient_satisfaction_score,
+       SUM(patients_admitted) AS Total_patient_admitted,
+       DENSE_RANK() OVER(ORDER BY SUM(patient_satisfaction) DESC) AS Rnk
+FROM services_weekly
+GROUP BY service, week
+ORDER BY Rnk) a
+WHERE Rnk <=3;
 
 
 
