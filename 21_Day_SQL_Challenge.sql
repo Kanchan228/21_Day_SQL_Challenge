@@ -733,7 +733,69 @@ FROM services_weekly
 GROUP BY service, week
 ORDER BY Rnk) a
 WHERE Rnk <=3;
+----------------------------------------------------------------------------------------------------------------------------------------------
+# Day 20
+-- 1. Calculate running total of patients admitted by week for each service.
+# for each service there is one week ie 1 row - no need of sum(patient_admitted) or group by 
+SELECT 
+     service,
+     week,
+     patients_admitted,
+SUM(patients_admitted) OVER(PARTITION BY service ORDER BY week) AS patient_admitted
+FROM services_weekly;
 
+-- 2. Find the moving average of patient satisfaction over 4-week periods.
+SELECT
+week,
+service,
+patient_satisfaction,
+ROUND(AVG(patient_satisfaction) OVER( ORDER BY week ROWS BETWEEN 3 PRECEDING AND CURRENT ROW),2)
+      AS 4_week_moving_avg
+FROM services_weekly;
+
+-- 3. Show cumulative patient refusals by week across all services.
+# Here across all services mean there are multiple service for 1 week so first group by week then find cumlative
+SELECT
+week,
+sum(patients_refused),
+SUM(SUM(patients_refused)) OVER(ORDER BY week ) AS Cum_patient_refusal
+FROM services_weekly
+GROUP BY week;
+
+/* Challenge Question: Create a trend analysis showing for each service and week: week number, patients_admitted,
+running total of patients admitted (cumulative), 3-week moving average of patient satisfaction (current week and
+ 2 prior weeks), and the difference between current week admissions and the service average. Filter for weeks 10-20 
+ only. */
+ Select * from(
+ SELECT 
+ week,
+ sum(patients_admitted),
+ SUM(sum(patients_admitted)) OVER( ORDER BY week),
+ AVG(SUM(patient_satisfaction)) OVER(ORDER BY week ROWS BETWEEN 2 PRECEDING AND CURRENT ROW),
+ sum(patients_admitted)- AVG(SUM(patient_satisfaction)) OVER( ORDER BY week)
+ FROM services_weekly
+ GROUP BY week) a
+ where week between 10 and 20;
+ 
+ SELECT *
+FROM (
+    SELECT 
+        service,
+        week,
+        SUM(patients_admitted) AS patients_admitted,
+        ROUND(AVG(patient_satisfaction),2) AS avg_satisfaction,
+        SUM(SUM(patients_admitted)) OVER(PARTITION BY service ORDER BY week) AS running_total, 
+        
+        ROUND(AVG(AVG(patient_satisfaction)) OVER(PARTITION BY service ORDER BY week
+            ROWS BETWEEN 2 PRECEDING AND CURRENT ROW),2) AS moving_avg_satisfaction,
+            
+        SUM(patients_admitted) -
+        ROUND(AVG(SUM(patients_admitted)) OVER(PARTITION BY service),2) AS diff_from_service_avg
+   FROM services_weekly
+   GROUP BY service, week
+) a
+WHERE week BETWEEN 10 AND 20
+ORDER BY service, week;
 
 
  
