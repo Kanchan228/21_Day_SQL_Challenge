@@ -796,16 +796,94 @@ FROM (
 ) a
 WHERE week BETWEEN 10 AND 20
 ORDER BY service, week;
+-------------------------------------------------------------------------------------------------------------------
+ # Day 21
+ -- 1. Create a CTE to calculate service statistics, then query from it.
+ WITH service_stats AS (
+SELECT
+	  service,
+	  SUM(patients_admitted) AS total_admitted,
+	  ROUND(AVG(patient_satisfaction),2) AS avg_satisfaction,
+	  SUM(patients_refused) AS total_refused
+FROM services_weekly
+GROUP BY service
+)
+SELECT
+    service,
+    total_admitted,
+    avg_satisfaction,
+    total_refused,
+    CASE
+        WHEN avg_satisfaction > 80 THEN 'High'
+        WHEN avg_satisfaction BETWEEN 60 AND 80 THEN 'Medium'
+        ELSE 'Low'
+    END AS service_level
+FROM service_stats
+ORDER BY avg_satisfaction DESC;
 
+-- 2. Use multiple CTEs to break down a complex query into logical steps.
+WITH service_totals AS (
+    SELECT 
+        service,
+        SUM(patients_admitted) AS total_admitted,
+        ROUND(AVG(patient_satisfaction),2) AS avg_satisfaction
+    FROM services_weekly
+    GROUP BY service),
+weekly_trend AS (
+    SELECT
+        service,
+        week,
+        ROUND(AVG(patient_satisfaction) OVER (PARTITION BY service ORDER BY week
+            ROWS BETWEEN 2 PRECEDING AND CURRENT ROW),2) AS moving_avg_satisfaction
+    FROM services_weekly
+),
+overall_avg AS (
+    SELECT AVG(total_admitted) AS overall_avg_admitted
+    FROM service_totals)
+SELECT 
+    st.service,
+    st.total_admitted,
+    st.avg_satisfaction,
+    wt.week,
+    wt.moving_avg_satisfaction
+FROM service_totals st
+JOIN weekly_trend wt ON st.service = wt.service
+CROSS JOIN overall_avg oa
+WHERE st.total_admitted > oa.overall_avg_admitted
+ORDER BY st.total_admitted DESC, wt.week;
 
- 
- 
- 
- 
-  
- 
- 
- 
- 
- 
- 
+-- 3. Build a CTE for staff utilization and join it with patient data.
+WITH staff_count AS (
+SELECT
+	  service,
+	  COUNT(*) AS total_staff
+FROM staff
+GROUP BY service),
+
+weekly_load AS (
+SELECT
+	  service,
+	  SUM(patients_admitted) AS total_admitted
+FROM services_weekly
+GROUP BY service),
+
+staff_utilization AS (
+SELECT
+	  wl.service,
+	  wl.total_admitted,
+	  sc.total_staff,
+	  ROUND(wl.total_admitted * 1.0 / NULLIF(sc.total_staff, 0),2) AS utilization_rate
+    FROM weekly_load wl
+    JOIN staff_count sc ON wl.service = sc.service)
+SELECT
+    p.patient_id,
+    p.name,
+    p.service,
+    p.age,
+    p.satisfaction,
+    su.total_staff,
+    su.total_admitted,
+    su.utilization_rate
+FROM patients p
+JOIN staff_utilization su ON p.service = su.service
+ORDER BY su.utilization_rate DESC;
